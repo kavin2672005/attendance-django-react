@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: attendance-fullstack
+    env: python
+    buildCommand: pip install -r myprojectas/requirements.txt && python myprojectas/manage.py collectstatic --noinput
+    startCommand: gunicorn myprojectas.wsgi:application
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: myprojectas.settings
+      - key: PYTHON_VERSION
+        value: 3.11
