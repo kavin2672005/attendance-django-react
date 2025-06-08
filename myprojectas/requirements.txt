@@ -1,5 +1,6 @@
 asgiref==3.8.1
 distlib==0.3.9
+whitenoise==6.5.0
 Django==5.2.2
 django-cors-headers==4.7.0
 djangorestframework==3.16.0
