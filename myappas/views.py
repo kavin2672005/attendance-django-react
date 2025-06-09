@@ -204,10 +204,16 @@ class AdminMonthlyReportView(APIView):
 
         return Response(data)
 
+from django.core.mail import send_mail, BadHeaderError
+from django.conf import settings
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from datetime import date
+from .models import Attendance, CustomUser as User  # or just User if already imported
 
 class AdminNotifyMissingPunchView(APIView):
     permission_classes = [IsAuthenticated]
-
 
     def get(self, request):
         today = date.today()
@@ -223,11 +229,16 @@ class AdminNotifyMissingPunchView(APIView):
                 missing_users.append(user.username)
 
         if missing_users:
-            send_mail(
-                'Missing Punch Alert',
-                f'The following users missed punch in/out today: {", ".join(missing_users)}',
-                'kavines8301@gmail.com',
-                ['kavines8301@gmail.com']
-            )
+            try:
+                send_mail(
+                    'Missing Punch Alert',
+                    f'The following users missed punch in/out today: {", ".join(missing_users)}',
+                    settings.EMAIL_HOST_USER,
+                    [settings.EMAIL_HOST_USER],
+                    fail_silently=False  # Don't suppress errors
+                )
+                return Response({'detail': 'Admin notified of missing punches.', 'missing_users': missing_users})
+            except Exception as e:
+                return Response({'detail': 'Notification failed', 'error': str(e)}, status=500)
 
-        return Response({'detail': 'Admin notified of missing punches.', 'missing_users': missing_users})
+        return Response({'detail': 'All users punched correctly today.', 'missing_users': []})
