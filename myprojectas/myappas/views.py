@@ -203,11 +203,18 @@ class AdminMonthlyReportView(APIView):
         }
 
         return Response(data)
+import logging
+from django.core.mail import send_mail
+from django.conf import settings
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from datetime import date
 
+logger = logging.getLogger(__name__)
 
 class AdminNotifyMissingPunchView(APIView):
     permission_classes = [IsAuthenticated]
-
 
     def get(self, request):
         today = date.today()
@@ -222,12 +229,22 @@ class AdminNotifyMissingPunchView(APIView):
             except Attendance.DoesNotExist:
                 missing_users.append(user.username)
 
-        if missing_users:
-            send_mail(
-                'Missing Punch Alert',
-                f'The following users missed punch in/out today: {", ".join(missing_users)}',
-                'kavines8301@gmail.com',
-                ['kavines8301@gmail.com']
-            )
+        logger.info(f"📌 Missing users today: {missing_users}")
 
-        return Response({'detail': 'Admin notified of missing punches.', 'missing_users': missing_users})
+        if missing_users:
+            try:
+                logger.info("📧 Attempting to send email...")
+                send_mail(
+                    'Missing Punch Alert',
+                    f'The following users missed punch in/out today: {", ".join(missing_users)}',
+                    settings.EMAIL_HOST_USER,
+                    [settings.EMAIL_HOST_USER],
+                    fail_silently=False
+                )
+                logger.info("✅ Email sent successfully.")
+                return Response({'detail': 'Admin notified of missing punches.', 'missing_users': missing_users})
+            except Exception as e:
+                logger.error(f"❌ Email failed: {e}")
+                return Response({'detail': 'Notification failed', 'error': str(e)}, status=500)
+
+        return Response({'detail': 'All users punched correctly today.', 'missing_users': []})

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: attendance-fullstack
+    name: attendance-backend
     env: python
     buildCommand: pip install -r myprojectas/requirements.txt && python myprojectas/manage.py collectstatic --noinput
     startCommand: gunicorn myprojectas.wsgi:application
@@ -9,3 +9,11 @@ services:
         value: myprojectas.settings
       - key: PYTHON_VERSION
         value: 3.11
+      # add secrets here
+
+  - type: web
+    name: attendance-frontend
+    env: node
+    buildCommand: cd myprojectas/attendancesheetfe/reactas && npm install && npm run build
+    startCommand: serve -s build
+    plan: free
